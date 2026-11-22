@@ -1,0 +1,28 @@
+name: fork-2904
+on:
+  push:
+    branches: [ci/fork-2904-baseline]
+  workflow_dispatch:
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: check
+        run: cargo check -p zenoh --features unstable --all-targets
+      - name: adminspace + connectivity + events tests
+        run: cargo test -p zenoh --features unstable,internal --test adminspace --test connectivity --test events -- --test-threads=1
+  scale:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: timing, 48 clients join one router (admin link events)
+        run: cargo test -p zenoh --features unstable,internal --test fork_join_scale --release -- --nocapture
